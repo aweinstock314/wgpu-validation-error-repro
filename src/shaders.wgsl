@@ -61,10 +61,18 @@ fn blit_vert_main(@builtin(vertex_index) vertex_index: u32, @builtin(instance_in
 }
 
 @group(0) @binding(0) var blit_source: texture_2d<f32>;
+@group(0) @binding(0) var blit_source_ms: texture_multisampled_2d<f32>;
 
 @fragment
 fn blit_frag_main(frag_data: BlitFragData) -> @location(0) vec4<f32> {
 	//let color = vec4<f32>(frag_data.uv.xy, 0.0, 1.0);
-	let color = textureLoad(blit_source, vec2<u32>(frag_data.uv * vec2<f32>(255.0, 255.0)), 0);
+	let color = textureLoad(blit_source, vec2<u32>(frag_data.uv * vec2<f32>(2047.0, 2047.0)), 0);
+	return color;
+}
+
+@fragment
+fn blit_frag_main_ms(frag_data: BlitFragData, @builtin(sample_index) sample_index: u32) -> @location(0) vec4<f32> {
+	//let color = vec4<f32>(frag_data.uv.xy, 0.0, 1.0);
+	let color = textureLoad(blit_source_ms, vec2<u32>(frag_data.uv * vec2<f32>(2047.0, 2047.0)), i32(sample_index));
 	return color;
 }

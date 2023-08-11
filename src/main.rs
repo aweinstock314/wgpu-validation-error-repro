@@ -1,12 +1,23 @@
 use std::borrow::Cow;
 use wgpu_example::framework::Spawner;
 
-pub const SPRITESHEET_RESOLUTION: u32 = 256;
+pub const SPRITESHEET_RESOLUTION: u32 = 2048;
 
 pub const VERTEX_LAYOUT: wgpu::VertexBufferLayout = wgpu::VertexBufferLayout {
     array_stride: 0,
     step_mode: wgpu::VertexStepMode::Vertex,
     attributes: &[],
+};
+
+// With MSAA on, it seems from renderdoc's perspective that `spritesheet` gets cleared every frame, and a validation error is present.
+// With MSAA off, the behavior in renderdoc is as expected, and consistent with the observed behavior at runtime.
+pub const USE_MSAA: bool = true;
+
+pub const NUM_MSAA_SAMPLES: u32 = 4;
+pub const MULTISAMPLE_STATE: wgpu::MultisampleState = wgpu::MultisampleState {
+    count: NUM_MSAA_SAMPLES,
+    mask: !0,
+    alpha_to_coverage_enabled: true,
 };
 
 struct Example {
@@ -52,7 +63,11 @@ impl wgpu_example::framework::Example for Example {
             },
             primitive: wgpu::PrimitiveState::default(),
             depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
+            multisample: if USE_MSAA {
+                MULTISAMPLE_STATE
+            } else {
+                wgpu::MultisampleState::default()
+            },
             fragment: Some(wgpu::FragmentState {
                 module: &module,
                 entry_point: &"frag_main",
@@ -73,7 +88,7 @@ impl wgpu_example::framework::Example for Example {
                     ty: wgpu::BindingType::Texture {
                         sample_type: wgpu::TextureSampleType::Float { filterable: false },
                         view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
+                        multisampled: USE_MSAA,
                     },
                     count: None,
                 }],
@@ -97,7 +112,11 @@ impl wgpu_example::framework::Example for Example {
             multisample: wgpu::MultisampleState::default(),
             fragment: Some(wgpu::FragmentState {
                 module: &module,
-                entry_point: &"blit_frag_main",
+                entry_point: if USE_MSAA {
+                    &"blit_frag_main_ms"
+                } else {
+                    &"blit_frag_main"
+                },
                 targets: &[Some(wgpu::ColorTargetState {
                     format: config.format,
                     blend: Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
@@ -115,7 +134,7 @@ impl wgpu_example::framework::Example for Example {
                 depth_or_array_layers: 1,
             },
             mip_level_count: 1,
-            sample_count: 1,
+            sample_count: if USE_MSAA { NUM_MSAA_SAMPLES } else { 1 },
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::Rgba8Unorm,
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
