@@ -57,7 +57,7 @@ impl wgpu_example::framework::Example for Example {
                 module: &module,
                 entry_point: &"frag_main",
                 targets: &[Some(wgpu::ColorTargetState {
-                    format: config.format,
+                    format: wgpu::TextureFormat::Rgba8Unorm,
                     blend: Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
@@ -117,7 +117,7 @@ impl wgpu_example::framework::Example for Example {
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
-            format: config.format,
+            format: wgpu::TextureFormat::Rgba8Unorm,
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
             view_formats: &[],
         });
